@@ -13,7 +13,7 @@ namespace Ticketbase.Models
 
         public string Filename { get; set; } = string.Empty;
 
-        [Display(Name = "Concert Date")]
+        [Display(Name = "Concert Date:")]
         public string EventDate { get; set; } = string.Empty;
 
     }

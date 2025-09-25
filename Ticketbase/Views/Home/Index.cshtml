@@ -1,0 +1,49 @@
+﻿@model List<Ticketbase.Models.Concert>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h1 class="mb-3">Concerts Happening:</h1>
+
+<table class="table w-50">
+    <thead>
+        <tr>
+            <th></th>
+            <th>
+                @Html.DisplayNameFor(model => model.First().EventId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.First().Title)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.First().EventDate)
+            </th>
+            <th>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var photo in Model)
+        {
+            <tr>
+                <td>
+                    <img src="images/@photo.Filename" alt="@photo.Title" class="thumbnail" />
+                </td>
+                <td>
+                    @Html.DisplayFor(model => photo.EventId)
+                    </td>
+                <td>
+                    @Html.DisplayFor(model => photo.Title)
+                    </td>
+                <td>
+                    @Html.DisplayFor(model => photo.EventDate)
+                </td>
+                <td>
+                    <a asp-controller="Home" asp-action="Details" asp-route-id="@photo.EventId">Details</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+

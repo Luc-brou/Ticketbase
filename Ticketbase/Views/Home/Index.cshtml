@@ -1,49 +1,44 @@
-﻿@model List<Ticketbase.Models.Concert>
+﻿@model IEnumerable<Ticketbase.Models.Concert>
 
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "All Concerts";
+
 }
 
-<h1 class="mb-3">Concerts Happening:</h1>
+<h1>Concerts</h1>
 
-<table class="table w-50">
+<p>
+    <a asp-controller="Concerts" asp-action="Create">Create New Concert</a>
+</p>
+<table class="table">
     <thead>
         <tr>
+            <th>@Html.DisplayNameFor(model => model.Title)</th>
+            <th>@Html.DisplayNameFor(model => model.Description)</th>
+            <th>@Html.DisplayNameFor(model => model.Filename)</th>
+            <th>@Html.DisplayNameFor(model => model.CreateDate)</th>
+            <th>@Html.DisplayNameFor(model => model.ConcertDate)</th>
+            <th>@Html.DisplayNameFor(model => model.Genre)</th>
             <th></th>
-            <th>
-                @Html.DisplayNameFor(model => model.First().EventId)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.First().Title)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.First().EventDate)
-            </th>
-            <th>
-            </th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var photo in Model)
+        
+        @foreach (var item in Model)
         {
             <tr>
+                <td>@item.Title</td>
+                <td>@item.Description</td>
+                <td>@item.Filename</td>
+                <td>@item.CreateDate.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@item.ConcertDate.ToString("yyyy-MM-dd")</td>
+                <td>@item.Genre?.Title</td>
                 <td>
-                    <img src="images/@photo.Filename" alt="@photo.Title" class="thumbnail" />
-                </td>
-                <td>
-                    @Html.DisplayFor(model => photo.EventId)
-                    </td>
-                <td>
-                    @Html.DisplayFor(model => photo.Title)
-                    </td>
-                <td>
-                    @Html.DisplayFor(model => photo.EventDate)
-                </td>
-                <td>
-                    <a asp-controller="Home" asp-action="Details" asp-route-id="@photo.EventId">Details</a>
+                    <a asp-controller="Concerts" asp-action="Edit" asp-route-id="@item.ConcertID">Edit</a>
+                    <a asp-controller="Concerts" asp-action="Details" asp-route-id="@item.ConcertID">Details</a> 
+                    <a asp-controller="Concerts" asp-action="Delete" asp-route-id="@item.ConcertID">Delete</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
-

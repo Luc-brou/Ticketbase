@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Ticketbase.Data;
 using Ticketbase.Models;
 
 namespace Ticketbase.Controllers
@@ -7,43 +9,37 @@ namespace Ticketbase.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly TicketbaseContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, TicketbaseContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        // GET: Home/Index
+        public async Task<IActionResult> Index()
         {
-            List<Concert> photos = new List<Concert>();
+            var concerts = await _context.Concerts
+                .Include(c => c.Genre) 
+                .ToListAsync();
 
-            Concert Event1 = new Concert
-            {
-                EventId = 1,
-                Title = "Radiohead North America Tour 2025",
-                Description = "Radiohead is coming to scotiabank theatre.",
-                Filename = "radiohead-logo.png",
-                EventDate = "November 12th, 2025"
-            };
-
-            photos.Add(Event1);
-
-            return View(photos);
+            return View(concerts);
         }
 
-        public IActionResult Details(int id)
+        // GET: Home/Details/5
+        public async Task<IActionResult> Details(int id)
         {
-            Concert Event1 = new Concert { EventId = id };
+            var concert = await _context.Concerts
+                .Include(c => c.Genre) 
+                .FirstOrDefaultAsync(c => c.ConcertID == id);
 
-            if (Event1.EventId == 1)
+            if (concert == null)
             {
-                Event1.Title = "Radiohead North America Tour 2025";
-                Event1.Description = "Radiohead is coming to scotiabank theatre. ";
-                Event1.Filename = "radiohead-logo.png";
-                Event1.EventDate = "November 12th, 2025";
+                return NotFound();
             }
 
-            return View(Event1);
+            return View(concert);
         }
     }
 }

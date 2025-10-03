@@ -41,5 +41,11 @@ namespace Ticketbase.Controllers
 
             return View(concert);
         }
+
+        public IActionResult Info()
+        {
+            return View();
+        }
+
     }
 }

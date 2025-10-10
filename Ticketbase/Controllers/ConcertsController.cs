@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,15 +29,13 @@ namespace Ticketbase.Controllers
         // GET: Concerts/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-                return NotFound();
+            if (id == null) return NotFound();
 
             var concert = await _context.Concerts
                 .Include(c => c.Genre)
                 .FirstOrDefaultAsync(m => m.ConcertID == id);
 
-            if (concert == null)
-                return NotFound();
+            if (concert == null) return NotFound();
 
             return View(concert);
         }
@@ -71,21 +68,11 @@ namespace Ticketbase.Controllers
                     using var stream = new FileStream(filePath, FileMode.Create);
                     await concert.ConcertPhoto.CopyToAsync(stream);
 
-                    // Save filename to DB
                     concert.Filename = fileName;
                 }
 
-                try
-                {
-                    _context.Add(concert);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateException ex)
-                {
-                    Console.WriteLine("DB Update Error: " + ex.InnerException?.Message);
-                    throw;
-                }
-
+                _context.Add(concert);
+                await _context.SaveChangesAsync();
                 return RedirectToAction("Index", "Home");
             }
 
@@ -96,14 +83,12 @@ namespace Ticketbase.Controllers
         // GET: Concerts/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-                return NotFound();
+            if (id == null) return NotFound();
 
             var concert = await _context.Concerts.FindAsync(id);
-            if (concert == null)
-                return NotFound();
+            if (concert == null) return NotFound();
 
-            ViewData["GenreID"] = new SelectList(_context.Genres, "GenreID", "GenreID", concert.GenreID);
+            ViewData["GenreID"] = new SelectList(_context.Genres, "GenreID", "Title", concert.GenreID);
             return View(concert);
         }
 
@@ -112,49 +97,41 @@ namespace Ticketbase.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Concert concert)
         {
-            if (id != concert.ConcertID)
-                return NotFound();
+            if (id != concert.ConcertID) return NotFound();
+
+            var existingConcert = await _context.Concerts.FindAsync(id);
+            if (existingConcert == null) return NotFound();
 
             if (ModelState.IsValid)
             {
-                try
+                existingConcert.Title = concert.Title;
+                existingConcert.Description = concert.Description;
+                existingConcert.ConcertDate = concert.ConcertDate;
+                existingConcert.GenreID = concert.GenreID;
+
+                if (concert.ConcertPhoto != null && concert.ConcertPhoto.Length > 0)
                 {
-                    // Handle new photo upload
-                    if (concert.ConcertPhoto != null && concert.ConcertPhoto.Length > 0)
+                    var photosPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "photos");
+                    if (!Directory.Exists(photosPath))
+                        Directory.CreateDirectory(photosPath);
+
+                    if (!string.IsNullOrEmpty(existingConcert.Filename))
                     {
-                        var photosPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "photos");
-                        if (!Directory.Exists(photosPath))
-                            Directory.CreateDirectory(photosPath);
-
-                        // Delete old file if it exists
-                        if (!string.IsNullOrEmpty(concert.Filename))
-                        {
-                            var oldPath = Path.Combine(photosPath, concert.Filename);
-                            if (System.IO.File.Exists(oldPath))
-                                System.IO.File.Delete(oldPath);
-                        }
-
-                        var fileName = Guid.NewGuid().ToString() + Path.GetExtension(concert.ConcertPhoto.FileName);
-                        var filePath = Path.Combine(photosPath, fileName);
-
-                        using var stream = new FileStream(filePath, FileMode.Create);
-                        await concert.ConcertPhoto.CopyToAsync(stream);
-
-                        // ✅ Update the filename in the entity
-                        concert.Filename = fileName;
+                        var oldPath = Path.Combine(photosPath, existingConcert.Filename);
+                        if (System.IO.File.Exists(oldPath))
+                            System.IO.File.Delete(oldPath);
                     }
 
-                    _context.Update(concert);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Concerts.Any(e => e.ConcertID == concert.ConcertID))
-                        return NotFound();
-                    else
-                        throw;
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(concert.ConcertPhoto.FileName);
+                    var filePath = Path.Combine(photosPath, fileName);
+
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await concert.ConcertPhoto.CopyToAsync(stream);
+
+                    existingConcert.Filename = fileName;
                 }
 
+                await _context.SaveChangesAsync();
                 return RedirectToAction("Index", "Home");
             }
 
@@ -165,15 +142,13 @@ namespace Ticketbase.Controllers
         // GET: Concerts/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-                return NotFound();
+            if (id == null) return NotFound();
 
             var concert = await _context.Concerts
                 .Include(c => c.Genre)
                 .FirstOrDefaultAsync(m => m.ConcertID == id);
 
-            if (concert == null)
-                return NotFound();
+            if (concert == null) return NotFound();
 
             return View(concert);
         }
@@ -186,14 +161,11 @@ namespace Ticketbase.Controllers
             var concert = await _context.Concerts.FindAsync(id);
             if (concert != null)
             {
-                // Delete associated photo file
                 if (!string.IsNullOrEmpty(concert.Filename))
                 {
                     var photoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "photos", concert.Filename);
                     if (System.IO.File.Exists(photoPath))
-                    {
                         System.IO.File.Delete(photoPath);
-                    }
                 }
 
                 _context.Concerts.Remove(concert);

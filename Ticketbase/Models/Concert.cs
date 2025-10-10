@@ -19,11 +19,11 @@ namespace Ticketbase.Models
         [Display(Name = "Concert Date")]
         public DateTime ConcertDate { get; set; } // Manually entered by user
 
-        public string? Filename { get; set; } // Can be empty (nullable)
+        public string? Filename { get; set; } // Stored filename in DB
 
         [NotMapped]
         [Display(Name = "Photo")]
-        public IFormFile? ConcertPhoto { get; set; } //Can be empty (nullable)
+        public IFormFile? ConcertPhoto { get; set; } // Upload only, not mapped
 
         public int GenreID { get; set; } // Foreign key
         public Genre? Genre { get; set; } // Navigation property

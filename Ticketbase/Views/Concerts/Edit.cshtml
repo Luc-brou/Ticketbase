@@ -1,5 +1,6 @@
 ﻿@model Ticketbase.Models.Concert
 
+
 @{
     ViewData["Title"] = "Edit";
 }
@@ -23,11 +24,36 @@
                 <input asp-for="Description" class="form-control" />
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
-            <div class="form-group">
+
+            @* <div class="form-group">
                 <label asp-for="Filename" class="control-label"></label>
+                <img src="/photos/@Model.Filename" alt="@Model.Title" class="img-fluid" />
                 <input asp-for="Filename" class="form-control" />
+                <div class="mb-3">
+                    <label asp-for="ConcertPhoto" class="form-label"></label>
+                    <input type="file" asp-for="ConcertPhoto" class="form-control" />
+                    <span asp-validation-for="ConcertPhoto" class="text-danger"></span>
+                </div>
+                <span asp-validation-for="Filename" class="text-danger"></span>
+            </div> *@
+
+            <div class="form-group">
+                <label asp-for="ConcertPhoto" class="control-label">Photo</label>
+
+                @if (!string.IsNullOrEmpty(Model.Filename))
+                {
+                    <div class="mb-2">
+                        <img src="~/photos/@Model.Filename" alt="@Model.Title" class="img-fluid" style="max-height:200px;" />
+                    </div>
+                }
+
+                <input type="hidden" asp-for="Filename" />
+
+                <input type="file" asp-for="ConcertPhoto" class="form-control" />
+                <span asp-validation-for="ConcertPhoto" class="text-danger"></span>
                 <span asp-validation-for="Filename" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <label asp-for="CreateDate" class="control-label"></label>
                 <input asp-for="CreateDate" class="form-control" />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -52,17 +53,43 @@ namespace Ticketbase.Controllers
         // POST: Concerts/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ConcertID,Title,Description,Filename,ConcertDate,GenreID")] Concert concert)
+        public async Task<IActionResult> Create(Concert concert)
         {
             if (ModelState.IsValid)
             {
-                concert.CreateDate = DateTime.Now; // Automatically set
-                _context.Add(concert);
-                await _context.SaveChangesAsync();
+                concert.CreateDate = DateTime.Now;
+
+                if (concert.ConcertPhoto != null && concert.ConcertPhoto.Length > 0)
+                {
+                    var photosPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "photos");
+                    if (!Directory.Exists(photosPath))
+                        Directory.CreateDirectory(photosPath);
+
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(concert.ConcertPhoto.FileName);
+                    var filePath = Path.Combine(photosPath, fileName);
+
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await concert.ConcertPhoto.CopyToAsync(stream);
+
+                    // Save filename to DB
+                    concert.Filename = fileName;
+                }
+
+                try
+                {
+                    _context.Add(concert);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException ex)
+                {
+                    Console.WriteLine("DB Update Error: " + ex.InnerException?.Message);
+                    throw;
+                }
+
                 return RedirectToAction("Index", "Home");
             }
 
-            ViewData["GenreID"] = new SelectList(_context.Genres, "GenreID", "GenreID", concert.GenreID);
+            ViewData["GenreID"] = new SelectList(_context.Genres, "GenreID", "Title", concert.GenreID);
             return View(concert);
         }
 
@@ -83,7 +110,7 @@ namespace Ticketbase.Controllers
         // POST: Concerts/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ConcertID,Title,Description,Filename,CreateDate,ConcertDate,GenreID")] Concert concert)
+        public async Task<IActionResult> Edit(int id, Concert concert)
         {
             if (id != concert.ConcertID)
                 return NotFound();
@@ -92,12 +119,37 @@ namespace Ticketbase.Controllers
             {
                 try
                 {
+                    // Handle new photo upload
+                    if (concert.ConcertPhoto != null && concert.ConcertPhoto.Length > 0)
+                    {
+                        var photosPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "photos");
+                        if (!Directory.Exists(photosPath))
+                            Directory.CreateDirectory(photosPath);
+
+                        // Delete old file if it exists
+                        if (!string.IsNullOrEmpty(concert.Filename))
+                        {
+                            var oldPath = Path.Combine(photosPath, concert.Filename);
+                            if (System.IO.File.Exists(oldPath))
+                                System.IO.File.Delete(oldPath);
+                        }
+
+                        var fileName = Guid.NewGuid().ToString() + Path.GetExtension(concert.ConcertPhoto.FileName);
+                        var filePath = Path.Combine(photosPath, fileName);
+
+                        using var stream = new FileStream(filePath, FileMode.Create);
+                        await concert.ConcertPhoto.CopyToAsync(stream);
+
+                        // ✅ Update the filename in the entity
+                        concert.Filename = fileName;
+                    }
+
                     _context.Update(concert);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ConcertExists(concert.ConcertID))
+                    if (!_context.Concerts.Any(e => e.ConcertID == concert.ConcertID))
                         return NotFound();
                     else
                         throw;
@@ -106,7 +158,7 @@ namespace Ticketbase.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            ViewData["GenreID"] = new SelectList(_context.Genres, "GenreID", "GenreID", concert.GenreID);
+            ViewData["GenreID"] = new SelectList(_context.Genres, "GenreID", "Title", concert.GenreID);
             return View(concert);
         }
 
@@ -134,6 +186,16 @@ namespace Ticketbase.Controllers
             var concert = await _context.Concerts.FindAsync(id);
             if (concert != null)
             {
+                // Delete associated photo file
+                if (!string.IsNullOrEmpty(concert.Filename))
+                {
+                    var photoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "photos", concert.Filename);
+                    if (System.IO.File.Exists(photoPath))
+                    {
+                        System.IO.File.Delete(photoPath);
+                    }
+                }
+
                 _context.Concerts.Remove(concert);
                 await _context.SaveChangesAsync();
             }

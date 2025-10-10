@@ -72,7 +72,7 @@ namespace Ticketbase.Controllers
                 }
 
                 _context.Add(concert);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); //allow to be null, broken
                 return RedirectToAction("Index", "Home");
             }
 

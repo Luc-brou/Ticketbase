@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Ticketbase.Data;
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +8,24 @@ builder.Services.AddDbContext<TicketbaseContext>(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+//Add user cookie authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true; // Reset the expiration time if the user is active
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    });
+
+//Add user secrets (for storing username and password)
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
 
 var app = builder.Build();
 
@@ -21,6 +40,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -29,6 +50,5 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Info}/{id?}")
     .WithStaticAssets();
-
 
 app.Run();

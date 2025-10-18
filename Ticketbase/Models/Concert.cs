@@ -19,7 +19,10 @@ namespace Ticketbase.Models
         [Display(Name = "Concert Date")]
         public DateTime ConcertDate { get; set; } // Manually entered by user
 
-        public string? Filename { get; set; } // Stored filename in DB
+        //public string? Filename { get; set; } // Stored filename in DB
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string? Filename { get; set; }
 
         [NotMapped]
         [Display(Name = "Photo")]

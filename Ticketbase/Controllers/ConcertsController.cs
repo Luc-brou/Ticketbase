@@ -154,7 +154,7 @@ namespace Ticketbase.Controllers
         }
 
         // POST: Concerts/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost, ActionName("Delete")] //TO DO: Fix bug where items without an image aren't being deleted from database
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

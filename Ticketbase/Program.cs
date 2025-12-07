@@ -2,26 +2,40 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Ticketbase.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Database connection
 builder.Services.AddDbContext<TicketbaseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("TicketbaseContext") ?? throw new InvalidOperationException("Connection string 'TicketbaseContext' not found.")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TicketbaseContext")
+        ?? throw new InvalidOperationException("Connection string 'TicketbaseContext' not found.")));
 
-// Add services to the container.
+// Add MVC + API controllers
 builder.Services.AddControllersWithViews();
+builder.Services.AddControllers(); // <-- add this so [ApiController] endpoints work
 
-//Add user cookie authentication
+// Add CORS policy for React frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy.WithOrigins("http://localhost:5173",   // Vite dev server
+                                     "https://your-frontend.azurestaticapps.net") // deployed React app
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
+});
+
+// Cookie authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-        options.SlidingExpiration = true; // Reset the expiration time if the user is active
+        options.SlidingExpiration = true;
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/Account/AccessDenied";
     });
 
-//Add user secrets (for storing username and password)
-
+// User secrets
 if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
@@ -29,26 +43,30 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseAuthentication();
+app.UseCors("AllowFrontend"); // <-- enable CORS here
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
 
+// MVC routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Info}/{id?}")
     .WithStaticAssets();
+
+// API routes
+app.MapControllers(); // <-- maps your new API controllers
 
 app.Run();

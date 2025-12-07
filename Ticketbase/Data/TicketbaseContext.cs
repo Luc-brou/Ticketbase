@@ -16,5 +16,6 @@ namespace Ticketbase.Data
 
         public DbSet<Concert> Concerts { get; set; } = default!;
         public DbSet<Genre> Genres { get; set; } = default!;
+        public DbSet<Ticketbase.Models.Purchase> Purchase { get; set; } = default!;
     }
 }

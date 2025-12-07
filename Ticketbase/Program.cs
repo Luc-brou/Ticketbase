@@ -5,26 +5,22 @@ using Ticketbase.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database connection
 builder.Services.AddDbContext<TicketbaseContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TicketbaseContext")
         ?? throw new InvalidOperationException("Connection string 'TicketbaseContext' not found.")));
 
-// Add MVC + API controllers
 builder.Services.AddControllersWithViews();
-builder.Services.AddControllers(); // <-- add this so [ApiController] endpoints work
+builder.Services.AddControllers();
 
-// Add CORS policy for React frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
-        policy => policy.WithOrigins("http://localhost:5173",   // Vite dev server
-                                     "https://your-frontend.azurestaticapps.net") // deployed React app
+        policy => policy.WithOrigins("http://localhost:5173",
+                                     "https://your-frontend.azurestaticapps.net")
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });
 
-// Cookie authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -35,7 +31,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Account/AccessDenied";
     });
 
-// User secrets
 if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
@@ -43,7 +38,6 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
-// Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -53,20 +47,18 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseCors("AllowFrontend"); // <-- enable CORS here
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
 
-// MVC routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Info}/{id?}")
     .WithStaticAssets();
 
-// API routes
-app.MapControllers(); // <-- maps your new API controllers
+app.MapControllers();
 
 app.Run();
